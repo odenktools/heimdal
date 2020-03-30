@@ -1,53 +1,24 @@
 <?php
 
-namespace Optimus\Heimdal\Provider;
+namespace Optimus\ApiConsumer\Provider;
 
 use Illuminate\Support\ServiceProvider as BaseProvider;
-use Optimus\Heimdal\Reporters\BugsnagReporter;
-use Optimus\Heimdal\Reporters\RollbarReporter;
-use Optimus\Heimdal\Reporters\SentryReporter;
+use Optimus\ApiConsumer\Router;
 
 class LaravelServiceProvider extends BaseProvider {
 
     public function register()
     {
-        $this->loadConfig();
-        $this->registerAssets();
-        $this->bindReporters();
+
     }
 
-    private function registerAssets()
+    public function boot()
     {
-        $this->publishes([
-            __DIR__.'/../config/optimus.heimdal.php' => config_path('optimus.heimdal.php')
-        ]);
-    }
+        $this->app->singleton('apiconsumer', function(){
+            $app = app();
 
-    private function loadConfig()
-    {
-        if ($this->app['config']->get('optimus.heimdal') === null) {
-            $this->app['config']->set('optimus.heimdal', require __DIR__.'/../config/optimus.heimdal.php');
-        }
-    }
-
-    private function bindReporters()
-    {
-        $this->app->bind(BugsnagReporter::class, function ($app) {
-            return function (array $config) {
-                return new BugsnagReporter($config);
-            };
-        });
-
-        $this->app->bind(SentryReporter::class, function ($app) {
-            return function (array $config) {
-                return new SentryReporter($config);
-            };
-        });
-
-        $this->app->bind(RollbarReporter::class, function ($app) {
-            return function (array $config) {
-                return new RollbarReporter($config);
-            };
+            return new Router($app, $app['request'], $app['router']);
         });
     }
+
 }
